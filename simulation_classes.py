@@ -3,6 +3,33 @@ import pygame
 import pickle as pkl
 import time
 
+class Button:
+    def __init__(self, x, y, text, font, width = None, height = None, text_colour = (255, 255, 255)):
+        self.x = x
+        self.y = y
+        self.scaled_x = 0
+        self.scaled_y = 0
+        self.width = width
+        self.height = height
+        self.text = text
+        self.font = font
+        self.text_colour = text_colour
+
+    # Draw the button
+    def draw_text(self, win):
+        render = self.font.render(self.text, True, self.text_colour)
+        self.width, self.height = render.get_size()
+        self.scaled_x = self.x - self.width / 2
+        self.scaled_y = self.y - self.height / 2
+        win.blit(render, (self.scaled_x, self.scaled_y))
+
+    # Check if the mouse is hovering over the button
+    def hovered(self, point):
+        if self.width != None and self.height != None:
+            return pygame.Rect(self.scaled_x, self.scaled_y, self.width, self.height).collidepoint(point)
+        else:
+            return False
+
 class Planet:
     SYSTEM_CENTER = (0, 0)
     Paused = False

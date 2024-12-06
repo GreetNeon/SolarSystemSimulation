@@ -10,7 +10,7 @@ import calculations
 import pygame
 import pickle as pkl
 from transitions import start_menu
-from planets import Planet, set_planets
+from simulation_classes import Planet, set_planets, Button
 import pygame_menu as pm
 import sys
 import pandas as pd
@@ -39,17 +39,17 @@ def create_pause_menu():
     pause_menu = pm.Menu(title="Pause Menu", width=resolution[0], height=resolution[1], theme=mytheme)
     # Creating the settings menu
     settings_menu = pm.Menu(title="Settings", width=resolution[0], height=resolution[1], theme=mytheme)
-    settings_menu.add.selector("Show FPS:", [("On", True), ("Off", False)], default=0, selector_id = "fps")
-    settings_menu.add.selector("Show Orbit Lines:", [("On", True), ("Off", False)], default=0, selector_id = "orbits_lines")
-    settings_menu.add.selector("Dynamic Orbit Lines:", [("On", True), ("Off", False)], default=1, selector_id = "dynamic_orbit")
-    settings_menu.add.selector("Show Images:", [("On", True), ("Off", False)], default=0, selector_id = "images")
-    settings_menu.add.selector("Show Sim Speed:", [("On", True), ("Off", False)], default=0, selector_id = "time")
-    
+    settings_menu.add.toggle_switch("Show Fps", True, toggleswitch_id='fps')
+    settings_menu.add.toggle_switch("Show Orbit Lines:", True, toggleswitch_id = "orbits_lines")
+    settings_menu.add.toggle_switch("Dynamic Orbit Lines:", True, toggleswitch_id = "dynamic_orbit")
+    settings_menu.add.toggle_switch("Show Images:", True, toggleswitch_id = "images")
+    settings_menu.add.toggle_switch("Show Sim Speed:", True, toggleswitch_id = "time")
+    settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
+
     pause_menu.add.button("Resume", lambda: pause_menu.disable())
     pause_menu.add.button("Settings", settings_menu)
     pause_menu.add.button("Exit to menu", lambda: start_menu())
     pause_menu.add.button("Exit to desktop", lambda: quit())
-    #ahhhh
 
     pause_menu.disable()
     return pause_menu, settings_menu
@@ -72,6 +72,8 @@ def main_sim():
     dynamic_orbit_lines = False
     sim_paused = False
     last_paused = time.time()
+    main_font = pygame.font.SysFont("Nevis", 20)
+    hover_colour = (255, 0, 0)
     # Defining planets
     planets = set_planets()
     # Allows controls to be held down
@@ -82,6 +84,9 @@ def main_sim():
 
     # Creating the pause menu
     pause_menu, settings_menu = create_pause_menu()
+    # Creating in-game buttons
+    show_controls = Button(screen_w * 0.95, screen_h * 0.01, "Show Controls", main_font)
+
     #Creating main loop
     while running:
         
@@ -156,23 +161,34 @@ def main_sim():
         if check_settings:
             check_settings = False
             sim_settings = settings_menu.get_input_data() 
-            show_fps = sim_settings["fps"][0][1]
-            show_orbit_lines = sim_settings["orbits_lines"][0][1]
-            dynamic_orbit_lines = sim_settings["dynamic_orbit"][0][1]
-            show_images = sim_settings["images"][0][1]
-            show_time = sim_settings["time"][0][1]
+            show_fps = sim_settings["fps"]
+            show_orbit_lines = sim_settings["orbits_lines"]
+            dynamic_orbit_lines = sim_settings["dynamic_orbit"]
+            show_images = sim_settings["images"]
+            show_time = sim_settings["time"]
+            if sim_settings["hover_colour"] != "":
+                hover_colour = sim_settings["hover_colour"]
 
+        '''Drawing Ui'''
         if show_fps:
             fps = clock.get_fps()
             fps_text = f"FPS: {round(fps, 2)}"
-            fps_render = pygame.font.SysFont("Ariel", 20).render(fps_text, True, (255, 255, 255))
+            fps_render = main_font.render(fps_text, True, (255, 255, 255))
             window.blit(fps_render, (10, 10))
         if show_time and fps != 0:
                 time_text = f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} days per second"
-                time_render = pygame.font.SysFont("Ariel", 20).render(time_text, True, (255, 255, 255))
+                time_render = main_font.render(time_text, True, (255, 255, 255))
                 window.blit(time_render, (10, 30))
-        # Updating the planets
-        
+        # Drawing buttons
+        show_controls.draw_text(window)
+
+        #Checking what the mouse is hovering over
+        mouse_pos = pygame.mouse.get_pos()
+        if show_controls.hovered(mouse_pos):
+            show_controls.text_colour = hover_colour
+        else:
+            show_controls.text_colour = (255, 255, 255)
+
         pygame.display.update()
 
     return
