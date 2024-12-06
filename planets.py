@@ -4,6 +4,7 @@ import pickle as pkl
 import time
 
 class Planet:
+    SYSTEM_CENTER = (0, 0)
     Paused = False
     AU = 149.6e6 * 1000
     G = 6.67428e-11
@@ -48,6 +49,7 @@ class Planet:
             self.load_orbit = True
             self.loaded_orbit = []
             self.orbit_refresh = False
+            self.last_orbit_change = 0
 
             # Change so that this is given when creating an object and each planet stores its own value
             self.planets_points = {"Sun": 1000000, "Mercury": 87, "Venus": 226, "Earth": 366, "Mars": 684, "Jupiter": 3000,
@@ -79,6 +81,8 @@ class Planet:
         orbit_points = [(point[0] * self.SCALE + (self.win_width / 2) + self.displacement_x,
                         point[1] * self.SCALE + (self.win_height / 2) + self.displacement_y) for point in orbit]
         x, y = orbit_points[-1]
+        if self.sun:
+            Planet.SYSTEM_CENTER = (x, y)
         '''This code was used to save the orbit points of the planets to a file'''
         # if not self.orbit_saved:
         #     try:
@@ -111,10 +115,13 @@ class Planet:
             #         pass
             # if len(self.loaded_orbit) > 2:
             #     pygame.draw.lines(self.win, self.color, False, self.loaded_orbit, 1)
-            if self.distance_to_centre == 0:
-                self.distance_to_centre = calculate_distance((x, y), (self.win_width / 2, self.win_height / 2))[0]
-            pygame.draw.circle(self.win, self.color, (self.win_width / 2 + self.displacement_x, self.win_height / 2 + self.displacement_y),
-                                self.distance_to_centre * self.orbit_zoom_scale, 2)
+            if self.distance_to_centre == 0 or self.last_orbit_change + 5 < time.time():
+                self.last_orbit_change = time.time()
+                self.distance_to_centre = calculate_distance((x, y), self.SYSTEM_CENTER)[0]
+            if not self.sun:
+                print(self.SYSTEM_CENTER)
+                pygame.draw.circle(self.win, self.color, self.SYSTEM_CENTER,
+                                    self.distance_to_centre * self.orbit_zoom_scale, 2)
 
         # Draw the planet
         self.adjusted_radius = self.radius * self.SCALE * self.planet_scale

@@ -84,7 +84,7 @@ def main_sim():
     pause_menu, settings_menu = create_pause_menu()
     #Creating main loop
     while running:
-        Planet.TIMESTEP = 3600*24
+        
         window.fill((0, 0, 0))
         clock.tick(FPS)
         # Updating the planets
@@ -106,9 +106,10 @@ def main_sim():
                 case pygame.KEYDOWN:
                     match event.key:
                         case pygame.K_d:
-                            Planet.TIMESTEP *= 1.1
+                            Planet.TIMESTEP *= 1.0005
                         case pygame.K_a:
-                            Planet.TIMESTEP /= 1.1
+                            Planet.TIMESTEP *= 0.9995
+                            print(Planet.TIMESTEP)
                         case pygame.K_w:
                             Planet.SCALE *= 1.0005
                             Planet.orbit_zoom_scale *= 1.0005
@@ -130,7 +131,6 @@ def main_sim():
                         case pygame.K_ESCAPE:
                             pause_menu.enable()
                             check_settings = True
-                            Planet.TIMESTEP = 0
                             pause_menu.mainloop(window)
 
                         # Controls to pan the screen
