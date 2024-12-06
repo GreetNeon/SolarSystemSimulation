@@ -1,6 +1,7 @@
-from calculations import calculate_force
+from calculations import calculate_force, calculate_distance
 import pygame
 import pickle as pkl
+import time
 
 class Planet:
     Paused = False
@@ -37,6 +38,7 @@ class Planet:
             self.orbit = []
             self.sun = False
             self.distance_to_sun = 0
+            self.distance_to_centre = 0
 
             self.x_vel = 0
             self.y_vel = 0
@@ -58,65 +60,74 @@ class Planet:
         self.win = win
         self.win_width, self.win_height = self.win.get_size()
 
-    def scale_orbit(self, value, dynamic_orbit, paused):
-        '''When zooming in or out, scale the orbit of the planet'''
-        self.scaled_x = (value * self.scaled_x) - ((self.win_width / 2) * (value - 1))
-        self.scaled_y = (value * self.scaled_y) - ((self.win_height / 2) * (value - 1))
-        if dynamic_orbit:
-            self.orbit_points = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.orbit_points]
-        else:
-            self.loaded_orbit = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.loaded_orbit]
+    '''This to scale the orbit of a planet when zooming, however, it is not used in the final version of the code'''
+    # def scale_orbit(self, value, dynamic_orbit, paused):
+    #     '''When zooming in or out, scale the orbit of the planet'''
+    #     self.scaled_x = (value * self.scaled_x) - ((self.win_width / 2) * (value - 1))
+    #     self.scaled_y = (value * self.scaled_y) - ((self.win_height / 2) * (value - 1))
+    #     if dynamic_orbit:
+    #         self.orbit_points = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.orbit_points]
+    #     else:
+    #         self.loaded_orbit = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.loaded_orbit]
     def draw(self, orbit_lines, dynamic_orbit):
-        # Draw the orbit of the planet
-        orbit_points = []
+        '''Draw the planet on the window'''
         if len(self.orbit) > self.planets_points[self.name]:
             orbit = self.orbit[-self.planets_points[self.name]:]
+
         else:
             orbit = self.orbit
-        for point in orbit:
-            x, y = point
-            x = x * self.SCALE + (self.win_width / 2)
-            y = y * self.SCALE + (self.win_height / 2)
-            orbit_points.append((x, y))
-            # if not self.orbit_saved:
-            #     try:
-            #         pkl.dump(self.orbit_points, open(f"data/OrbitPoints/{self.name}OrbitPoints.txt", "wb"))
-            #     except FileNotFoundError:
-            #         print("File not found")
-            #     self.orbit_saved = True
-            #     print(f"Orbit points saved for {self.name}")
+        orbit_points = [(point[0] * self.SCALE + (self.win_width / 2), point[1] * self.SCALE + (self.win_height / 2)) for point in orbit]
+        x, y = orbit_points[-1]
+        # for point in orbit:
+        #     orbit_points = 
+        #     x, y = point
+        #     x = x 
+        #     y = y * self.SCALE + (self.win_height / 2)
+        #     orbit_points.append((x, y))
+        '''This code was used to save the orbit points of the planets to a file'''
+        # if not self.orbit_saved:
+        #     try:
+        #         pkl.dump(orbit_points, open(f"data/OrbitPoints/{self.name}OrbitPoints.txt", "wb"))
+        #     except FileNotFoundError:
+        #         print("OrbitPoints file not found")
+        #     self.orbit_saved = True
+        #     print(f"Orbit points saved for {self.name}")
+
         
-        
-            # Code to save the orbit points
-        
-        if dynamic_orbit and self.orbit_refresh:
-            self.orbit_points = []
+        if self.orbit != [] and self.orbit_refresh:
+            current_position = self.orbit[-1]
+            self.orbit.clear()
+            self.orbit.append(current_position)
             self.orbit_refresh = False
 
         if len(orbit_points) > 2 and orbit_lines and dynamic_orbit:
             pygame.draw.lines(self.win, self.color, False, orbit_points, 1)
 
         elif not dynamic_orbit:
-            self.orbit_refresh = True
-            if self.load_orbit:
-                try:
-                    self.loaded_orbit = pkl.load(open(f"data/OrbitPoints/{self.name}OrbitPoints.txt", "rb"))
-                    self.load_orbit = False
-                except FileNotFoundError:
-                    print("File not found")
-                    pass
-            if len(self.loaded_orbit) > 2:
-                pygame.draw.lines(self.win, self.color, False, self.loaded_orbit, 1)
+            if not self.orbit_refresh:
+                self.orbit_refresh = True
+            # if self.load_orbit:
+            #     try:
+            #         self.loaded_orbit = pkl.load(open(f"data/OrbitPoints/{self.name}OrbitPoints.txt", "rb"))
+            #         self.load_orbit = False
+            #     except FileNotFoundError:
+            #         print("File not found")
+            #         pass
+            # if len(self.loaded_orbit) > 2:
+            #     pygame.draw.lines(self.win, self.color, False, self.loaded_orbit, 1)
+            if self.distance_to_centre == 0:
+                self.distance_to_centre = calculate_distance((x, y), (self.win_width / 2, self.win_height / 2))[0]
+            pygame.draw.circle(self.win, self.color, (self.win_width / 2, self.win_height / 2), self.distance_to_centre * self.orbit_zoom_scale, 2)
 
         # Draw the planet
         self.adjusted_radius = self.radius * self.SCALE * self.planet_scale
         pygame.draw.circle(self.win, self.color, (x, y), self.adjusted_radius)
 
-    def attraction(self, other):
-        force_x, force_y = calculate_force(self, other, self.G)
+    def attraction(self, other:object):
+        force_x, force_y, self.distance_to_sun = calculate_force(self, other, self.G)
         return force_x, force_y
 
-    def update_position(self, planets):
+    def update_position(self, planets:list):
         total_fx = total_fy = 0
         for planet in planets:
             if self == planet:

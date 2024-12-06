@@ -2,7 +2,9 @@
 # Description: Main file for the project
 # Dependencies: calculations.py, menu_GUI.py, transitions.py
 # Author: Teon Green
-# Current Bugs: Zooming not working for orbits
+# Current Bugs: -When changing resolution, the orbits dont scale as they are based off of 1200x900
+#               -Zooming works for dynamic orbits but not for static orbits - fix: draw static
+#               orbits as hollow circles and scale radius
 ####################################################################################################
 
 # Importing the calculations module
