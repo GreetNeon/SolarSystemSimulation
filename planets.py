@@ -76,14 +76,9 @@ class Planet:
 
         else:
             orbit = self.orbit
-        orbit_points = [(point[0] * self.SCALE + (self.win_width / 2), point[1] * self.SCALE + (self.win_height / 2)) for point in orbit]
+        orbit_points = [(point[0] * self.SCALE + (self.win_width / 2) + self.displacement_x,
+                        point[1] * self.SCALE + (self.win_height / 2) + self.displacement_y) for point in orbit]
         x, y = orbit_points[-1]
-        # for point in orbit:
-        #     orbit_points = 
-        #     x, y = point
-        #     x = x 
-        #     y = y * self.SCALE + (self.win_height / 2)
-        #     orbit_points.append((x, y))
         '''This code was used to save the orbit points of the planets to a file'''
         # if not self.orbit_saved:
         #     try:
@@ -106,6 +101,7 @@ class Planet:
         elif not dynamic_orbit:
             if not self.orbit_refresh:
                 self.orbit_refresh = True
+            '''This code was used to load the orbit points of the planets from a file'''
             # if self.load_orbit:
             #     try:
             #         self.loaded_orbit = pkl.load(open(f"data/OrbitPoints/{self.name}OrbitPoints.txt", "rb"))
@@ -117,7 +113,8 @@ class Planet:
             #     pygame.draw.lines(self.win, self.color, False, self.loaded_orbit, 1)
             if self.distance_to_centre == 0:
                 self.distance_to_centre = calculate_distance((x, y), (self.win_width / 2, self.win_height / 2))[0]
-            pygame.draw.circle(self.win, self.color, (self.win_width / 2, self.win_height / 2), self.distance_to_centre * self.orbit_zoom_scale, 2)
+            pygame.draw.circle(self.win, self.color, (self.win_width / 2 + self.displacement_x, self.win_height / 2 + self.displacement_y),
+                                self.distance_to_centre * self.orbit_zoom_scale, 2)
 
         # Draw the planet
         self.adjusted_radius = self.radius * self.SCALE * self.planet_scale

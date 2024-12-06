@@ -2,9 +2,7 @@
 # Description: Main file for the project
 # Dependencies: calculations.py, menu_GUI.py, transitions.py
 # Author: Teon Green
-# Current Bugs: -When changing resolution, the orbits dont scale as they are based off of 1200x900
-#               -Zooming works for dynamic orbits but not for static orbits - fix: draw static
-#               orbits as hollow circles and scale radius
+# Current Bugs: 
 ####################################################################################################
 
 # Importing the calculations module
@@ -89,15 +87,6 @@ def main_sim():
         Planet.TIMESTEP = 3600*24
         window.fill((0, 0, 0))
         clock.tick(FPS)
-        if show_fps:
-            fps = clock.get_fps()
-            fps_text = f"FPS: {round(fps, 2)}"
-            fps_render = pygame.font.SysFont("Ariel", 20).render(fps_text, True, (255, 255, 255))
-            window.blit(fps_render, (10, 10))
-        if show_time and fps != 0:
-                time_text = f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} days per second"
-                time_render = pygame.font.SysFont("Ariel", 20).render(time_text, True, (255, 255, 255))
-                window.blit(time_render, (10, 30))
         # Updating the planets
         for planet in planets:
             if planet.win is None:
@@ -138,18 +127,31 @@ def main_sim():
                             # for planet in planets:
                             #     for i in range(len(planet.orbit_points)):
                             #         planet.orbit_points[i] = (planet.orbit_points[i][0] / 1.0005, planet.orbit_points[i][1] / 1.0005)
-                            print(Planet.SCALE)
                         case pygame.K_ESCAPE:
                             pause_menu.enable()
                             check_settings = True
                             Planet.TIMESTEP = 0
                             pause_menu.mainloop(window)
 
+                        # Controls to pan the screen
+                        case pygame.K_DOWN:
+                            Planet.displacement_y -= 1
+                        case pygame.K_UP:
+                            Planet.displacement_y += 1
+                        case pygame.K_LEFT:
+                            Planet.displacement_x += 1
+                        case pygame.K_RIGHT:
+                            Planet.displacement_x -= 1
+
                         case pygame.K_SPACE:
-                            print(last_paused)
                             if last_paused + 0.3 < time.time():
                                 last_paused = time.time()
                                 sim_paused = not sim_paused
+
+                        # Recentreing the solar system
+                        case pygame.K_r:
+                            Planet.displacement_x = 0
+                            Planet.displacement_y = 0
 
         if check_settings:
             check_settings = False
@@ -159,6 +161,16 @@ def main_sim():
             dynamic_orbit_lines = sim_settings["dynamic_orbit"][0][1]
             show_images = sim_settings["images"][0][1]
             show_time = sim_settings["time"][0][1]
+
+        if show_fps:
+            fps = clock.get_fps()
+            fps_text = f"FPS: {round(fps, 2)}"
+            fps_render = pygame.font.SysFont("Ariel", 20).render(fps_text, True, (255, 255, 255))
+            window.blit(fps_render, (10, 10))
+        if show_time and fps != 0:
+                time_text = f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} days per second"
+                time_render = pygame.font.SysFont("Ariel", 20).render(time_text, True, (255, 255, 255))
+                window.blit(time_render, (10, 30))
         # Updating the planets
         
         pygame.display.update()
