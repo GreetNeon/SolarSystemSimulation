@@ -18,7 +18,9 @@ import time
 
 pygame.init()
 # Loading the settings
-settings = pkl.load(open("data/settings.txt", "rb"))
+settings_file = open("data/settings.txt", "rb")
+settings = pkl.load(settings_file)
+settings_file.close()
 resolution = settings["resolution"][0][1]
 graphics = settings["graphics"][0][1]
 

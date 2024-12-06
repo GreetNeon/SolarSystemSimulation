@@ -54,10 +54,12 @@ class Planet:
             self.orbit_points = []
 
     def set_window(self, win):
+        '''Set the window the planet is being drawn on'''
         self.win = win
         self.win_width, self.win_height = self.win.get_size()
 
     def scale_orbit(self, value, dynamic_orbit, paused):
+        '''When zooming in or out, scale the orbit of the planet'''
         self.scaled_x = (value * self.scaled_x) - ((self.win_width / 2) * (value - 1))
         self.scaled_y = (value * self.scaled_y) - ((self.win_height / 2) * (value - 1))
         if dynamic_orbit:
@@ -75,7 +77,7 @@ class Planet:
             x, y = point
             x = x * self.SCALE + (self.win_width / 2)
             y = y * self.SCALE + (self.win_height / 2)
-            orbit_points.append((self.scaled_x, self.scaled_y))
+            orbit_points.append((x, y))
             # if not self.orbit_saved:
             #     try:
             #         pkl.dump(self.orbit_points, open(f"data/OrbitPoints/{self.name}OrbitPoints.txt", "wb"))
@@ -90,8 +92,10 @@ class Planet:
         if dynamic_orbit and self.orbit_refresh:
             self.orbit_points = []
             self.orbit_refresh = False
-        if len(self.orbit_points) > 2 and orbit_lines and dynamic_orbit:
+
+        if len(orbit_points) > 2 and orbit_lines and dynamic_orbit:
             pygame.draw.lines(self.win, self.color, False, orbit_points, 1)
+
         elif not dynamic_orbit:
             self.orbit_refresh = True
             if self.load_orbit:
