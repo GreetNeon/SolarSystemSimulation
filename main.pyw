@@ -47,6 +47,7 @@ def create_pause_menu():
     pause_menu.add.button("Settings", settings_menu)
     pause_menu.add.button("Exit to menu", lambda: start_menu())
     pause_menu.add.button("Exit to desktop", lambda: quit())
+    #ahhhh
 
     pause_menu.disable()
     return pause_menu, settings_menu
