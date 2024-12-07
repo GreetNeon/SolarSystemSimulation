@@ -50,6 +50,7 @@ def create_pause_menu():
     sim_settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
     # Adding the widgets to the planet settings menu
     planet_settings_menu.add.range_slider("Relative Planet Scale:", 2, (1, 10), 1, rangeslider_id="planet_scale")
+    planet_settings_menu.add.selector("Planet colours: ", [("Default", "default"), ("Greyscale", "greyscale"), ("Inverted", "inverted"), ("Fun", "fun")],selector_id="planet_colours")
     # Adding the widgets to the pause menu
     pause_menu.add.button("Resume", lambda: pause_menu.disable())
     pause_menu.add.button("Simulation Settings", sim_settings_menu)
@@ -120,9 +121,9 @@ def main_sim():
             # Outline planet if it being hovered over
             if planet.hovered is True:
                 outline_radius = planet.adjusted_radius + screen_w * 0.01
-                pygame.draw.circle(window, planet.color, (planet.scaled_x, planet.scaled_y), outline_radius, 2)
-                pygame.draw.line(window, planet.color, (planet.scaled_x + outline_radius - 1, planet.scaled_y), (planet.scaled_x + outline_radius + screen_w * 0.03, planet.scaled_y), 2)
-                display_text(window, planet.name, main_font, planet.scaled_x + outline_radius + screen_w * 0.035, planet.scaled_y - screen_h * 0.01, text_colour = planet.color, scale = False)
+                pygame.draw.circle(window, planet.colour, (planet.scaled_x, planet.scaled_y), outline_radius, 2)
+                pygame.draw.line(window, planet.colour, (planet.scaled_x + outline_radius - 1, planet.scaled_y), (planet.scaled_x + outline_radius + screen_w * 0.03, planet.scaled_y), 2)
+                display_text(window, planet.name, main_font, planet.scaled_x + outline_radius + screen_w * 0.035, planet.scaled_y - screen_h * 0.01, text_colour = planet.colour, scale = False)
 
         # Checking for events
         for event in pygame.event.get():
@@ -192,7 +193,8 @@ def main_sim():
 
         if check_settings:
             check_settings = False
-            Planet.update_planet_size = True
+            Planet.update_planet_sizes = True
+            Planet.update_planet_colours = True
             sim_settings = sim_settings_menu.get_input_data()
             planet_settings = planet_settings_menu.get_input_data()
             show_fps = sim_settings["fps"]
@@ -203,6 +205,7 @@ def main_sim():
             if sim_settings["hover_colour"] != "":
                 hover_colour = sim_settings["hover_colour"]
             Planet.planet_size = planet_settings["planet_scale"]
+            Planet.colour_mode = planet_settings["planet_colours"][0][1]
 
         '''Drawing Ui'''
 
