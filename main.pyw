@@ -10,7 +10,7 @@ import calculations
 import pygame
 import pickle as pkl
 from transitions import start_menu
-from simulation_classes import Planet, set_planets, Button
+from simulation_helper import Planet, set_planets, Button, display_text
 import pygame_menu as pm
 import sys
 import pandas as pd
@@ -69,10 +69,12 @@ def main_sim():
     show_fps = True
     show_images = True
     show_time = True
+    show_controls = False
     dynamic_orbit_lines = False
     sim_paused = False
     last_paused = time.time()
     main_font = pygame.font.SysFont("Nevis", 20)
+    larger_font = pygame.font.SysFont("Nevis", 40)
     hover_colour = (255, 0, 0)
     # Defining planets
     planets = set_planets()
@@ -82,23 +84,39 @@ def main_sim():
     window = pygame.display.set_mode(resolution)
     pygame.display.set_caption("Solar System Simulation")
 
+    # Defining controls
+    controls = ["W - Zoom In", "S - Zoom Out", "A - Decrease Speed", "D - Increase Speed",
+                "Space - Pause/Unpause", "Arrow Keys - Pan Screen", "R - Recentre Solar System", "Esc - Pause Menu"]
+
     # Creating the pause menu
     pause_menu, settings_menu = create_pause_menu()
     # Creating in-game buttons
-    show_controls = Button(screen_w * 0.95, screen_h * 0.01, "Show Controls", main_font)
+    show_controls_button = Button(screen_w * 0.92, screen_h * 0.01, "Show Controls", main_font)
 
     #Creating main loop
     while running:
-        
+        mouse_pos = pygame.mouse.get_pos()
         window.fill((0, 0, 0))
         clock.tick(FPS)
+        Planet.Paused = sim_paused
         # Updating the planets
         for planet in planets:
             if planet.win is None:
                 planet.set_window(window)
             if not sim_paused:
                 planet.update_position(planets)
+            if planet.rect != None:
+                if planet.rect.collidepoint(mouse_pos):
+                    planet.hovered = True
+                else:
+                    planet.hovered = False
             planet.draw(show_orbit_lines, dynamic_orbit_lines)
+            # Outline planet if it being hovered over
+            if planet.hovered is True:
+                outline_radius = planet.adjusted_radius + screen_w * 0.01
+                pygame.draw.circle(window, planet.color, (planet.scaled_x, planet.scaled_y), outline_radius, 2)
+                pygame.draw.line(window, planet.color, (planet.scaled_x + outline_radius - 1, planet.scaled_y), (planet.scaled_x + outline_radius + screen_w * 0.03, planet.scaled_y), 2)
+                display_text(window, planet.name, main_font, planet.scaled_x + outline_radius + screen_w * 0.035, planet.scaled_y - screen_h * 0.01, text_colour = planet.color, scale = False)
 
         # Checking for events
         for event in pygame.event.get():
@@ -106,7 +124,7 @@ def main_sim():
                 case pygame.QUIT:
                     running = False
                     pygame.display.quit()
-                    start_menu()
+                    exit()
                     break
                 case pygame.KEYDOWN:
                     match event.key:
@@ -114,7 +132,6 @@ def main_sim():
                             Planet.TIMESTEP *= 1.0005
                         case pygame.K_a:
                             Planet.TIMESTEP *= 0.9995
-                            print(Planet.TIMESTEP)
                         case pygame.K_w:
                             Planet.SCALE *= 1.0005
                             Planet.orbit_zoom_scale *= 1.0005
@@ -158,6 +175,16 @@ def main_sim():
                             Planet.displacement_x = 0
                             Planet.displacement_y = 0
 
+                case pygame.MOUSEBUTTONDOWN:
+                    event_pos = pygame.mouse.get_pos()
+                    print(show_controls_button.hovered(event_pos))
+                    if show_controls_button.hovered(event_pos):
+                        show_controls = not show_controls
+                        if show_controls:
+                            show_controls_button.text = "Hide Controls"
+                        else:
+                            show_controls_button.text = "Show Controls"
+
         if check_settings:
             check_settings = False
             sim_settings = settings_menu.get_input_data() 
@@ -170,24 +197,27 @@ def main_sim():
                 hover_colour = sim_settings["hover_colour"]
 
         '''Drawing Ui'''
+
         if show_fps:
             fps = clock.get_fps()
-            fps_text = f"FPS: {round(fps, 2)}"
-            fps_render = main_font.render(fps_text, True, (255, 255, 255))
-            window.blit(fps_render, (10, 10))
+            display_text(window, f"FPS: {round(fps, 2)}", main_font, screen_w * 0.005, screen_h * 0.01, scale = False)
         if show_time and fps != 0:
-                time_text = f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} days per second"
-                time_render = main_font.render(time_text, True, (255, 255, 255))
-                window.blit(time_render, (10, 30))
+                display_text(window, f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} (Days Per Second)",
+                                main_font, screen_w * 0.005, screen_h * 0.035, scale = False)
+        if sim_paused:
+            display_text(window, "Paused", larger_font, screen_w / 2, screen_h * 0.05, text_colour=(255, 0, 0))
         # Drawing buttons
-        show_controls.draw_text(window)
+        show_controls_button.draw_text(window)
+        if show_controls:
+            for i in range(len(controls)):
+                display_text(window, controls[i], main_font, screen_w * 0.92, screen_h * 0.05 + (i * 20))
 
         #Checking what the mouse is hovering over
-        mouse_pos = pygame.mouse.get_pos()
-        if show_controls.hovered(mouse_pos):
-            show_controls.text_colour = hover_colour
+        if show_controls_button.hovered(mouse_pos):
+            show_controls_button.text_colour = hover_colour
         else:
-            show_controls.text_colour = (255, 255, 255)
+            show_controls_button.text_colour = (255, 255, 255)
+        
 
         pygame.display.update()
 

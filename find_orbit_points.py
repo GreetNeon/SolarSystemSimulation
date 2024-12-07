@@ -1,4 +1,4 @@
-from simulation_classes import *
+from simulation_helper import *
 import pygame
 
 planets = set_planets()

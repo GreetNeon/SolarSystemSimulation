@@ -17,11 +17,8 @@ class Button:
 
     # Draw the button
     def draw_text(self, win):
-        render = self.font.render(self.text, True, self.text_colour)
-        self.width, self.height = render.get_size()
-        self.scaled_x = self.x - self.width / 2
-        self.scaled_y = self.y - self.height / 2
-        win.blit(render, (self.scaled_x, self.scaled_y))
+        self.scaled_x, self.scaled_y, self.width, self.height = display_text(win, self.text, self.font, self.x,
+                                                                            self.y, self.text_colour, rtrn = True)
 
     # Check if the mouse is hovering over the button
     def hovered(self, point):
@@ -36,6 +33,7 @@ class Planet:
     AU = 149.6e6 * 1000
     G = 6.67428e-11
     SCALE = 210 / AU  # 1AU = 100 pixels
+    DEFAULT_SCALE = 210 / AU  # Should remain constant
     SCALE_CHANGE = 1
     TIMESTEP = 3600*24 # 1 day
     planet_scale = 900000000
@@ -77,6 +75,8 @@ class Planet:
             self.loaded_orbit = []
             self.orbit_refresh = False
             self.last_orbit_change = 0
+            self.rect = None
+            self.hovered = False
 
             # Change so that this is given when creating an object and each planet stores its own value
             self.planets_points = {"Sun": 1000000, "Mercury": 87, "Venus": 226, "Earth": 366, "Mars": 684, "Jupiter": 3000,
@@ -108,6 +108,9 @@ class Planet:
         orbit_points = [(point[0] * self.SCALE + (self.win_width / 2) + self.displacement_x,
                         point[1] * self.SCALE + (self.win_height / 2) + self.displacement_y) for point in orbit]
         x, y = orbit_points[-1]
+        self.scaled_x = x
+        self.scaled_y = y
+        self.rect = pygame.Rect(x - self.adjusted_radius - 10, y - self.adjusted_radius - 10, (self.adjusted_radius * 2) + 10, (self.adjusted_radius * 2) + 10)
         if self.sun:
             Planet.SYSTEM_CENTER = (x, y)
         '''This code was used to save the orbit points of the planets to a file'''
@@ -142,13 +145,14 @@ class Planet:
             #         pass
             # if len(self.loaded_orbit) > 2:
             #     pygame.draw.lines(self.win, self.color, False, self.loaded_orbit, 1)
-            if self.distance_to_centre == 0 or self.last_orbit_change + 5 < time.time():
+            if self.distance_to_centre == 0 or (self.last_orbit_change + 5 < time.time() and not self.Paused):
                 self.last_orbit_change = time.time()
-                self.distance_to_centre = calculate_distance((x, y), self.SYSTEM_CENTER)[0]
+                scaled_x = self.x * self.DEFAULT_SCALE + (self.win_width / 2) + self.displacement_x
+                scaled_y = self.y * self.DEFAULT_SCALE + (self.win_height / 2) + self.displacement_y
+                self.distance_to_centre = calculate_distance((scaled_x, scaled_y), self.SYSTEM_CENTER)[0]
             if not self.sun:
-                print(self.SYSTEM_CENTER)
                 pygame.draw.circle(self.win, self.color, self.SYSTEM_CENTER,
-                                    self.distance_to_centre * self.orbit_zoom_scale, 2)
+                                    self.distance_to_centre * self.orbit_zoom_scale, 1)
 
         # Draw the planet
         self.adjusted_radius = self.radius * self.SCALE * self.planet_scale
@@ -193,20 +197,37 @@ def set_planets():
     venus = Planet(0.723 * Planet.AU, 0, 7, Planet.VENUS_COLOR, 4.8685 * 10 ** 24, "Venus")
     venus.y_vel = -35.02 * 1000
 
-    jupiter = Planet(5.2 * Planet.AU, 0, 20, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter")
+    # jupiter = Planet(5.2 * Planet.AU, 0, 20, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter")
+    jupiter = Planet(5.2 * Planet.AU, 0, 200, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter")
     jupiter.y_vel = -13.06 * 1000
 
-    saturn = Planet(9.5 * Planet.AU, 0, 16, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn")
+    # saturn = Planet(9.5 * Planet.AU, 0, 16, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn")
+    saturn = Planet(9.5 * Planet.AU, 0, 160, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn")
     saturn.y_vel = -9.68 * 1000
 
-    uranus = Planet(-19.8 * Planet.AU, 0, 12, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus")
+    # uranus = Planet(-19.8 * Planet.AU, 0, 12, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus")
+    uranus = Planet(-19.8 * Planet.AU, 0, 120, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus")
     uranus.y_vel = 6.80 * 1000
 
-    neptune = Planet(30 * Planet.AU, 0, 12, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune")
+    # neptune = Planet(30 * Planet.AU, 0, 12, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune")
+    neptune = Planet(30 * Planet.AU, 0, 120, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune")
     neptune.y_vel = -5.43 * 1000
 
-    pluto = Planet(-39 * Planet.AU, 0, 2, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto")
+    # pluto = Planet(-39 * Planet.AU, 0, 2, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto")
+    pluto = Planet(-39 * Planet.AU, 0, 200, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto")
     pluto.y_vel = 4.67 * 1000
 
     planets = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto]
     return planets
+
+def display_text(win, text, font, x, y, text_colour = (255, 255, 255), rtrn = False, scale = True):
+    render = font.render(text, True, text_colour)
+    width, height = render.get_size()
+    scaled_x = x - width / 2
+    scaled_y = y - height / 2
+    if scale:
+        win.blit(render, (scaled_x, scaled_y))
+    else:
+        win.blit(render, (x, y))
+    if rtrn:
+        return scaled_x, scaled_y, width, height
