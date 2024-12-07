@@ -26,7 +26,7 @@ graphics = settings["graphics"][0][1]
 
 def create_pause_menu():
     pause_menu_image = pm.baseimage.BaseImage(image_path="gfx/pause_background.png", drawing_mode=pm.baseimage.IMAGE_MODE_FILL)
-    mytheme = pm.Theme(background_color=pause_menu_image, # transparent background
+    mytheme = pm.Theme(background_color=pause_menu_image,
                 title_background_color=(4, 47, 126),
                 title_font_shadow=True,
                 title_font = pm.font.FONT_NEVIS,
@@ -37,22 +37,27 @@ def create_pause_menu():
                 widget_selection_effect = pm.widgets.HighlightSelection(),
                 widget_border_color = (0, 0, 255))
     pause_menu = pm.Menu(title="Pause Menu", width=resolution[0], height=resolution[1], theme=mytheme)
-    # Creating the settings menu
-    settings_menu = pm.Menu(title="Settings", width=resolution[0], height=resolution[1], theme=mytheme)
-    settings_menu.add.toggle_switch("Show Fps", True, toggleswitch_id='fps')
-    settings_menu.add.toggle_switch("Show Orbit Lines:", True, toggleswitch_id = "orbits_lines")
-    settings_menu.add.toggle_switch("Dynamic Orbit Lines:", True, toggleswitch_id = "dynamic_orbit")
-    settings_menu.add.toggle_switch("Show Images:", True, toggleswitch_id = "images")
-    settings_menu.add.toggle_switch("Show Sim Speed:", True, toggleswitch_id = "time")
-    settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
+    # Creating the simulation settings menu
+    sim_settings_menu = pm.Menu(title="Settings", width=resolution[0], height=resolution[1], theme=mytheme)
+    # Creating the planet settibns menu
+    planet_settings_menu = pm.Menu(title="Planet Settings", width=resolution[0], height=resolution[1], theme=mytheme)
+    # Adding the widgets to the settings menus
+    sim_settings_menu.add.toggle_switch("Show Fps", True, toggleswitch_id='fps')
+    sim_settings_menu.add.toggle_switch("Show Orbit Lines:", True, toggleswitch_id = "orbits_lines")
+    sim_settings_menu.add.toggle_switch("Dynamic Orbit Lines:", True, toggleswitch_id = "dynamic_orbit")
+    sim_settings_menu.add.toggle_switch("Show Images:", True, toggleswitch_id = "images")
+    sim_settings_menu.add.toggle_switch("Show Sim Speed:", True, toggleswitch_id = "time")
+    sim_settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
+    # Adding the widgets to the planet settings menu
 
     pause_menu.add.button("Resume", lambda: pause_menu.disable())
-    pause_menu.add.button("Settings", settings_menu)
+    pause_menu.add.button("Simulation Settings", sim_settings_menu)
+    pause_menu.add.button("Planet Settings", planet_settings_menu)
     pause_menu.add.button("Exit to menu", lambda: start_menu())
     pause_menu.add.button("Exit to desktop", lambda: quit())
 
     pause_menu.disable()
-    return pause_menu, settings_menu
+    return pause_menu, sim_settings_menu
 
 
 
@@ -93,7 +98,7 @@ def main_sim():
     # Creating in-game buttons
     show_controls_button = Button(screen_w * 0.92, screen_h * 0.01, "Show Controls", main_font)
 
-    #Creating main loop
+    # Creating main loop
     while running:
         mouse_pos = pygame.mouse.get_pos()
         window.fill((0, 0, 0))
