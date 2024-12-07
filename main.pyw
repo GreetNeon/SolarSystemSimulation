@@ -61,8 +61,6 @@ def create_pause_menu():
     pause_menu.disable()
     return pause_menu, sim_settings_menu, planet_settings_menu
 
-
-
 def main_sim():
     planets = set_planets()
     FPS = 90
@@ -112,12 +110,13 @@ def main_sim():
                 planet.set_window(window)
             if not sim_paused:
                 planet.update_position(planets)
+            planet.draw(show_orbit_lines, dynamic_orbit_lines, show_images)
             if planet.rect != None:
                 if planet.rect.collidepoint(mouse_pos):
                     planet.hovered = True
                 else:
                     planet.hovered = False
-            planet.draw(show_orbit_lines, dynamic_orbit_lines)
+            
             # Outline planet if it being hovered over
             if planet.hovered is True:
                 outline_radius = planet.adjusted_radius + screen_w * 0.01
@@ -142,21 +141,11 @@ def main_sim():
                         case pygame.K_w:
                             Planet.SCALE *= 1.0005
                             Planet.orbit_zoom_scale *= 1.0005
-                            #for planet in planets:
-                                #planet.scale_orbit(1.0005, dynamic_orbit_lines, sim_paused)
-                            # for planet in planets:
-                            #     for i in range(len(planet.orbit_points)):
-                            #         planet.orbit_points[i] = (planet.orbit_points[i][0] / 1.0005, planet.orbit_points[i][1] / 1.0005)
-                            # print(Planet.SCALE)
+
                         case pygame.K_s:
                             Planet.SCALE *= 0.9995
                             Planet.orbit_zoom_scale *= 0.9995
-                            #for planet in planets:
-                                    #planet.scale_orbit(0.9995, dynamic_orbit_lines, sim_paused)
-                            
-                            # for planet in planets:
-                            #     for i in range(len(planet.orbit_points)):
-                            #         planet.orbit_points[i] = (planet.orbit_points[i][0] / 1.0005, planet.orbit_points[i][1] / 1.0005)
+
                         case pygame.K_ESCAPE:
                             pause_menu.enable()
                             check_settings = True
@@ -190,6 +179,7 @@ def main_sim():
                             show_controls_button.text = "Hide Controls"
                         else:
                             show_controls_button.text = "Show Controls"
+
 
         if check_settings:
             check_settings = False
@@ -228,7 +218,6 @@ def main_sim():
             show_controls_button.text_colour = hover_colour
         else:
             show_controls_button.text_colour = (255, 255, 255)
-        
 
         pygame.display.update()
 
