@@ -37,6 +37,8 @@ class Planet:
     SCALE_CHANGE = 1
     TIMESTEP = 3600*24 # 1 day
     planet_scale = 900000000
+    planet_size = 2
+    update_planet_size = True
     orbit_zoom_scale = 1
     displacement_x = 0
     displacement_y = 0
@@ -57,6 +59,7 @@ class Planet:
             self.scaled_y = 0
             self.name = name
             self.radius = radius
+            self.size = radius
             self.adjusted_radius = 0
             self.color = color
             self.mass = mass
@@ -82,11 +85,17 @@ class Planet:
             self.planets_points = planets_points
             
             self.orbit_points = []
+            self.update_size()
 
     def set_window(self, win):
         '''Set the window the planet is being drawn on'''
         self.win = win
         self.win_width, self.win_height = self.win.get_size()
+
+    def update_size(self):
+        '''Update the size of the planet'''
+        if not self.sun:
+            self.size = self.radius * self.planet_size
 
     '''This to scale the orbit of a planet when zooming, however, it is not used in the final version of the code'''
     # def scale_orbit(self, value, dynamic_orbit, paused):
@@ -99,6 +108,10 @@ class Planet:
     #         self.loaded_orbit = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.loaded_orbit]
     def draw(self, orbit_lines, dynamic_orbit):
         '''Draw the planet on the window'''
+        if self.update_planet_size:
+            self.update_size()
+            if self.name == 'Pluto':
+                self.update_planet_size = False
         if len(self.orbit) > self.planets_points:
             orbit = self.orbit[-self.planets_points:]
         else:
@@ -160,7 +173,7 @@ class Planet:
                                     self.distance_to_centre * self.orbit_zoom_scale, 1)
 
         # Draw the planet
-        self.adjusted_radius = self.radius * self.SCALE * self.planet_scale
+        self.adjusted_radius = self.size * self.SCALE * self.planet_scale
         pygame.draw.circle(self.win, self.color, (x, y), self.adjusted_radius)
 
     def attraction(self, other:object):
@@ -192,39 +205,39 @@ def set_planets():
 # A function to create all planet objects
     p_points = {"Sun": 10, "Mercury": 87, "Venus": 226, "Earth": 366, "Mars": 684, "Jupiter": 4350,
                 "Saturn": 11000, "Uranus": 34000, "Neptune": 51000, "Pluto": 120000}
-    sun = Planet(0, 0, 30, Planet.YELLOW, 1.98892 * 10 ** 30, "Sun", p_points["Sun"])
+    sun = Planet(0, 0, 15, Planet.YELLOW, 1.98892 * 10 ** 30, "Sun", p_points["Sun"])
     sun.sun = True
 
-    earth = Planet(-1 * Planet.AU, 0, 8, Planet.EARTH_COLOR, 5.9722 * 10 ** 24, "Earth", p_points["Earth"])
+    earth = Planet(-1 * Planet.AU, 0, 3.96, Planet.EARTH_COLOR, 5.9722 * 10 ** 24, "Earth", p_points["Earth"])
     earth.y_vel = 29.783 * 1000
 
-    mars = Planet(-1.524 * Planet.AU, 0, 6, Planet.MARS_COLOR, 6.39 * 10 ** 23, "Mars", p_points["Mars"])
+    mars = Planet(-1.524 * Planet.AU, 0, 2.46, Planet.MARS_COLOR, 6.39 * 10 ** 23, "Mars", p_points["Mars"])
     mars.y_vel = 24.077 * 1000
 
-    mercury = Planet(0.387 * Planet.AU, 0, 4, Planet.MERCURY_COLOR, 3.30 * 10 ** 23, "Mercury", p_points["Mercury"])
+    mercury = Planet(0.387 * Planet.AU, 0, 1.52, Planet.MERCURY_COLOR, 3.30 * 10 ** 23, "Mercury", p_points["Mercury"])
     mercury.y_vel = -47.4 * 1000
 
-    venus = Planet(0.723 * Planet.AU, 0, 7, Planet.VENUS_COLOR, 4.8685 * 10 ** 24, "Venus", p_points["Venus"])
+    venus = Planet(0.723 * Planet.AU, 0, 3.76, Planet.VENUS_COLOR, 4.8685 * 10 ** 24, "Venus", p_points["Venus"])
     venus.y_vel = -35.02 * 1000
 
     # jupiter = Planet(5.2 * Planet.AU, 0, 20, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter")
-    jupiter = Planet(5.2 * Planet.AU, 0, 200, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter", p_points["Jupiter"])
+    jupiter = Planet(5.2 * Planet.AU, 0, 43.44, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter", p_points["Jupiter"])
     jupiter.y_vel = -13.06 * 1000
 
     # saturn = Planet(9.5 * Planet.AU, 0, 16, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn")
-    saturn = Planet(9.5 * Planet.AU, 0, 160, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn", p_points["Saturn"])
+    saturn = Planet(9.5 * Planet.AU, 0, 36.18, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn", p_points["Saturn"])
     saturn.y_vel = -9.68 * 1000
 
     # uranus = Planet(-19.8 * Planet.AU, 0, 12, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus")
-    uranus = Planet(-19.8 * Planet.AU, 0, 120, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus", p_points["Uranus"])
+    uranus = Planet(-19.8 * Planet.AU, 0, 15.76, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus", p_points["Uranus"])
     uranus.y_vel = 6.80 * 1000
 
     # neptune = Planet(30 * Planet.AU, 0, 12, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune")
-    neptune = Planet(30 * Planet.AU, 0, 120, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune", p_points["Neptune"])
+    neptune = Planet(30 * Planet.AU, 0, 15.3, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune", p_points["Neptune"])
     neptune.y_vel = -5.43 * 1000
 
     # pluto = Planet(-39 * Planet.AU, 0, 2, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto")
-    pluto = Planet(-39 * Planet.AU, 0, 200, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto", p_points["Pluto"])
+    pluto = Planet(-39 * Planet.AU, 0, 1.48, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto", p_points["Pluto"])
     pluto.y_vel = 4.67 * 1000
 
     planets = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto]

@@ -49,7 +49,8 @@ def create_pause_menu():
     sim_settings_menu.add.toggle_switch("Show Sim Speed:", True, toggleswitch_id = "time")
     sim_settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
     # Adding the widgets to the planet settings menu
-
+    planet_settings_menu.add.range_slider("Relative Planet Scale:", 2, (1, 10), 1, rangeslider_id="planet_scale")
+    # Adding the widgets to the pause menu
     pause_menu.add.button("Resume", lambda: pause_menu.disable())
     pause_menu.add.button("Simulation Settings", sim_settings_menu)
     pause_menu.add.button("Planet Settings", planet_settings_menu)
@@ -57,7 +58,7 @@ def create_pause_menu():
     pause_menu.add.button("Exit to desktop", lambda: quit())
 
     pause_menu.disable()
-    return pause_menu, sim_settings_menu
+    return pause_menu, sim_settings_menu, planet_settings_menu
 
 
 
@@ -94,7 +95,7 @@ def main_sim():
                 "Space - Pause/Unpause", "Arrow Keys - Pan Screen", "R - Recentre Solar System", "Esc - Pause Menu"]
 
     # Creating the pause menu
-    pause_menu, settings_menu = create_pause_menu()
+    pause_menu, sim_settings_menu, planet_settings_menu = create_pause_menu()
     # Creating in-game buttons
     show_controls_button = Button(screen_w * 0.92, screen_h * 0.01, "Show Controls", main_font)
 
@@ -182,7 +183,6 @@ def main_sim():
 
                 case pygame.MOUSEBUTTONDOWN:
                     event_pos = pygame.mouse.get_pos()
-                    print(show_controls_button.hovered(event_pos))
                     if show_controls_button.hovered(event_pos):
                         show_controls = not show_controls
                         if show_controls:
@@ -192,7 +192,9 @@ def main_sim():
 
         if check_settings:
             check_settings = False
-            sim_settings = settings_menu.get_input_data() 
+            Planet.update_planet_size = True
+            sim_settings = sim_settings_menu.get_input_data()
+            planet_settings = planet_settings_menu.get_input_data()
             show_fps = sim_settings["fps"]
             show_orbit_lines = sim_settings["orbits_lines"]
             dynamic_orbit_lines = sim_settings["dynamic_orbit"]
@@ -200,6 +202,7 @@ def main_sim():
             show_time = sim_settings["time"]
             if sim_settings["hover_colour"] != "":
                 hover_colour = sim_settings["hover_colour"]
+            Planet.planet_size = planet_settings["planet_scale"]
 
         '''Drawing Ui'''
 
