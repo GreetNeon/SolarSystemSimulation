@@ -204,13 +204,15 @@ def main_sim():
                         Planet.planet_focused = False
                         Planet.displacement_x = 0
                         Planet.displacement_y = 0
-                    if (hovered_planet != planet_focus) and Planet.planet_focused and hovered_planet is not None:
+                    elif (hovered_planet != planet_focus) and Planet.planet_focused and hovered_planet is not None:
                         planet_focus = hovered_planet
                     
-
+        if planet_focus != None and hovered_planet != None:
+            print(f'planet focused: {planet_focus.name}')
+            print(f'planet hovered: {hovered_planet.name}')
         if check_settings:
             check_settings = False
-            Planet.update_planet_sizes = True
+            Planet.update_planet_sizes = True 
             Planet.update_planet_colours = True
             sim_settings = sim_settings_menu.get_input_data()
             planet_settings = planet_settings_menu.get_input_data()
