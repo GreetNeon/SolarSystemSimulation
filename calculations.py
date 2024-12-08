@@ -4,6 +4,12 @@
 
 import math
 
+def calculate_xy(radius, theta):
+    # Calculating the x and y coordinates of the planet
+    x = radius * math.cos(theta)
+    y = radius * math.sin(theta)
+    return x, y
+
 def calculate_distance(planet1:tuple, planet2:tuple):
     # Calculating the distance between the 2 planets
     # To add: change the value distance to sun

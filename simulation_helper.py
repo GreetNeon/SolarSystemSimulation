@@ -1,4 +1,4 @@
-from calculations import calculate_force, calculate_distance
+from calculations import calculate_force, calculate_distance, calculate_xy
 import pygame
 import pickle as pkl
 import time
@@ -78,6 +78,7 @@ class Planet:
             self.last_orbit_change = 0
             self.rect = None
             self.hovered = False
+            self.focused = False
 
             # Change so that this is given when creating an object and each planet stores its own value
             self.planets_points = planets_points
@@ -162,7 +163,7 @@ class Planet:
         self.adjusted_radius = self.size * self.SCALE * self.planet_scale
         # Dont draw unless its in the window
         if self.rect.colliderect(self.win.get_rect()):
-            if show_images:
+            if show_images and self.name != 'Earth Moon':
                 self.image = pygame.transform.scale(pygame.image.load(f'gfx/{self.name}.png').convert_alpha(), (int(self.adjusted_radius * 2), int(self.adjusted_radius * 2)))
                 self.win.blit(self.image, (x - self.adjusted_radius + self.correction_x, y - self.adjusted_radius + self.correction_y))
             else:
@@ -191,6 +192,44 @@ class Planet:
         self.y += self.y_vel * self.TIMESTEP
         self.orbit.append((self.x, self.y))
 
+class Moon(Planet):
+    def __init__(self, dist_from_parent, radius, parent, colours, mass, name, orbit_period, win = None):
+        self.parent = parent
+        self.orbit_points = []
+        self.orbit = []
+        self.displacement_x = 0
+        self.displacement_y = 0
+        self.distance_to_parent = dist_from_parent * self.DEFAULT_SCALE * 30
+        self.orbit_period = orbit_period * 24 * 3600
+        self.theta = 0
+        super().__init__(parent.x + self.distance_to_parent, parent.y, radius, colours, mass, name, 100)
+        print(self.distance_to_parent)
+        
+
+    def update_position(self, planets):
+        #idea: Let earth be the sun for the moon, and calculate the force of attraction between the moon and the earth, based on
+        #the scaled positions of the moon and the earth
+        # Easier idea: make the moon do a circle around its parent planet
+        x, y = calculate_xy(self.distance_to_parent, self.theta)
+        p_x, p_y = self.parent.orbit_points[-1]
+        self.x = p_x + (x * (self.SCALE / self.DEFAULT_SCALE))
+        self.y = p_y + (y * (self.SCALE / self.DEFAULT_SCALE))
+        self.orbit_points.append((self.x, self.y))
+        self.theta += self.TIMESTEP/self.orbit_period
+
+    def draw(self, show_orbit_lines, dynamic_orbit_lines, show_images):
+        temp_x, temp_y = self.parent.orbit_points[-1]
+        diff_x = (self.win_width/2) - temp_x
+        diff_y = (self.win_height/2) - temp_y
+        self.scaled_x = self.x + diff_x
+        self.scaled_y = self.y + diff_y
+        if self.parent.focused:
+            print(f'scaled x: {self.scaled_x} scaled y: {self.scaled_y}')
+            print(f'diff x: {diff_x} diff y: {diff_y}')
+            pygame.draw.circle(self.win, self.colour, (self.scaled_x, self.scaled_y), self.radius * self.SCALE * self.planet_scale)
+        else:
+            pygame.draw.circle(self.win, self.colour, (self.x, self.y), self.radius * self.SCALE * self.planet_scale)
+
         
 def set_planets():
     '''Create all the planet objects'''
@@ -207,7 +246,8 @@ def set_planets():
         "Saturn": {"default": "#ab604a", "greyscale": "#D3D3D3", "inverted": "#549FB5", "fun": "#FF00FF"},
         "Uranus": {"default": "#7BBEF5", "greyscale": "#808080", "inverted": "#84410A", "fun": "#00FFFF"},
         "Neptune": {"default": "#4b70dd", "greyscale": "#696969", "inverted": "#B48F22", "fun": "#1E90FF"},
-        "Pluto": {"default": "#9ca6b7", "greyscale": "#BEBEBE", "inverted": "#635948", "fun": "#FF1493"}
+        "Pluto": {"default": "#9ca6b7", "greyscale": "#BEBEBE", "inverted": "#635948", "fun": "#FF1493"},
+        'Earth Moon': {"default": "#808080", "greyscale": "#818181", "inverted": "#FFFFFF", "fun": "#F3A8C2"}
     }
     
     sun = Planet(0, 0, 15, all_colours["Sun"], 1.98892 * 10 ** 30, "Sun", p_points["Sun"])
@@ -245,8 +285,14 @@ def set_planets():
     pluto = Planet(-39 * Planet.AU, 0, 1.48, all_colours["Pluto"], 0.01303 * 10 ** 24, "Pluto", p_points["Pluto"])
     pluto.y_vel = 4.67 * 1000
 
+    #test 
+    earth_moon = Moon(0.00257 * Planet.AU, 1, earth, all_colours["Earth Moon"], 7.342 * 10 ** 22, "Earth Moon", 27.3)
+    earth_moon.y_vel = 2.28 * 1000
+
+
     planets = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto]
-    return planets
+    moons = [earth_moon]
+    return planets, moons
 
 def display_text(win, text, font, x, y, text_colour = (255, 255, 255), rtrn = False, scale = True):
     '''Display text on the window'''

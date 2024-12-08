@@ -1,8 +1,8 @@
 ####################################################################################################
 # Description: Main file for the project
-# Dependencies: calculations.py, menu_GUI.py, transitions.py
+# Dependencies: calculations.py, menu_GUI.py, transitions.py, simulation_helper.py
 # Author: Teon Green
-# Current Bugs: None
+# Current Bugs: When focusing a planet, and then focusing on another planet, earths moon centres at that planet
 ####################################################################################################
 
 # Importing the calculations module
@@ -85,7 +85,7 @@ def main_sim():
     larger_font = pygame.font.SysFont("Nevis", 40)
     hover_colour = (255, 0, 0)
     # Defining planets
-    planets = set_planets()
+    planets, moons = set_planets()
     # Allows controls to be held down
     pygame.key.set_repeat(1)
     # Creating the window
@@ -140,6 +140,12 @@ def main_sim():
                     if planet.hovered:
                         planet_hovered = False
                     planet.hovered = False
+        for moon in moons:
+            if moon.win is None:
+                moon.set_window(window)
+            if not sim_paused:
+                moon.update_position(planets)
+            moon.draw(show_orbit_lines, dynamic_orbit_lines, show_images)            
             
             # Outline planet if it being hovered over
             if planet.hovered is True:
@@ -167,7 +173,6 @@ def main_sim():
                         case pygame.K_a:
                             Planet.TIMESTEP *= 0.9995
                             update_planet_points = True
-                            print(planets[1].planets_points)
 
                         case pygame.K_w:
                             Planet.SCALE *= 1.0005
@@ -212,7 +217,6 @@ def main_sim():
                             show_controls_button.text = "Show Controls"
                     if planet_hovered and not Planet.planet_focused:
                         Planet.planet_focused = True
-                        print(Planet.planet_focused)
 
                     elif (planet_focus is not None and Planet.planet_focused and planet_focus.hovered):
                         Planet.planet_focused = False
@@ -221,9 +225,6 @@ def main_sim():
                     elif (hovered_planet != planet_focus) and Planet.planet_focused and hovered_planet is not None:
                         planet_focus = hovered_planet
                     
-        if planet_focus != None and hovered_planet != None:
-            print(f'planet focused: {planet_focus.name}')
-            print(f'planet hovered: {hovered_planet.name}')
         if check_settings:
             check_settings = False
             Planet.update_planet_sizes = True 
@@ -268,10 +269,8 @@ def main_sim():
             show_controls_button.text_colour = (255, 255, 255)
 
         if Planet.planet_focused and (planet_focus is not None):
+            planet_focus.focused = True
             temp_x, temp_y = planet_focus.orbit[-1]
-            sun_x, sun_y = planets[0].orbit[-1]
-            s_sun_x = sun_x * Planet.SCALE
-            s_sun_y = sun_y * Planet.SCALE
             temp_x = temp_x * Planet.SCALE
             temp_y = temp_y * Planet.SCALE
             focus_x, focus_y = planet_focus.orbit_points[-1]
@@ -281,7 +280,6 @@ def main_sim():
             Planet.correction_y = diff_y
             Planet.displacement_x = (-temp_x)
             Planet.displacement_y = (-temp_y)
-            print(f'focused planet x: {planet_focus.orbit_points[-1][0]}, y: {planet_focus.orbit_points[-1][1]} diff x: {diff_x} diff y: {diff_y}')
         else:
             Planet.correction_x = 0
             Planet.correction_y = 0
@@ -289,6 +287,7 @@ def main_sim():
         pygame.display.update()
 
     return
+
 
 # Running the main function
 if __name__ == "__main__":
