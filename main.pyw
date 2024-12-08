@@ -1,9 +1,9 @@
-####################################################################################################
+#########################################################################################################################
 # Description: Main file for the project
-# Dependencies: calculations.py, menu_GUI.py, transitions.py, simulation_helper.py
+# Dependencies: calculations.py, menu_GUI.py, transitions.py, simulation_helper.py, pygame, pickle, pygame_menu
 # Author: Teon Green
-# Current Bugs: None
-####################################################################################################
+# Current Bugs: moon colours dont change
+#########################################################################################################################
 
 # Importing the calculations module
 import calculations
@@ -12,8 +12,6 @@ import pickle as pkl
 from transitions import start_menu
 from simulation_helper import Planet, set_planets, Button, display_text
 import pygame_menu as pm
-import sys
-import pandas as pd
 import time
 
 pygame.init()

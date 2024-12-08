@@ -114,8 +114,6 @@ class Planet:
                 self.update_planet_sizes = False
         if self.update_planet_colours:
             self.update_colour()
-            if self.name == 'Pluto':
-                self.update_planet_colours = False
 
         if len(self.orbit) > self.planets_points:
             orbit = self.orbit[-self.planets_points:]
@@ -221,6 +219,10 @@ class Moon(Planet):
         self.theta += self.TIMESTEP/self.orbit_period
 
     def draw(self):
+        if self.update_planet_colours:
+            self.update_colour()
+            if self.name == 'Titania':
+                self.update_planet_colours = False
         temp_x, temp_y = self.parent.orbit_points[-1]
         diff_x = (self.win_width/2) - temp_x
         diff_y = (self.win_height/2) - temp_y
