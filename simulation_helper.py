@@ -35,6 +35,7 @@ class Planet:
     SCALE = 210 / AU  # 1AU = 100 pixels
     DEFAULT_SCALE = 210 / AU  # Should remain constant
     SCALE_CHANGE = 1
+    DEFAULT_TIMESTEP = 3600*24 # 1 day
     TIMESTEP = 3600*24 # 1 day
     planet_scale = 900000000
     planet_size = 2
@@ -80,6 +81,7 @@ class Planet:
 
             # Change so that this is given when creating an object and each planet stores its own value
             self.planets_points = planets_points
+            self.default_planets_points = planets_points
             
             self.orbit_points = []
             self.update_size()
@@ -98,6 +100,10 @@ class Planet:
     def update_colour(self):
         '''Update the colour of the planet'''
         self.colour = self.colours[self.colour_mode]
+
+    def update_planet_points(self):
+        '''Update the number of points in the orbit'''
+        self.planets_points = int(round(self.default_planets_points * (self.DEFAULT_TIMESTEP/self.TIMESTEP)))
 
     def draw(self, orbit_lines, dynamic_orbit, show_images):
         '''Draw the planet on the window'''

@@ -2,7 +2,7 @@
 # Description: Main file for the project
 # Dependencies: calculations.py, menu_GUI.py, transitions.py
 # Author: Teon Green
-# Current Bugs: When unfocusing and trying to refocus on a planet, the previously focused planet is still focused 
+# Current Bugs: None
 ####################################################################################################
 
 # Importing the calculations module
@@ -43,10 +43,12 @@ def create_pause_menu():
     planet_settings_menu = pm.Menu(title="Planet Settings", width=resolution[0], height=resolution[1], theme=mytheme)
     # Adding the widgets to the settings menus
     sim_settings_menu.add.toggle_switch("Show Fps", True, toggleswitch_id='fps')
-    sim_settings_menu.add.toggle_switch("Show Orbit Lines:", True, toggleswitch_id = "orbits_lines")
-    sim_settings_menu.add.toggle_switch("Dynamic Orbit Lines:", True, toggleswitch_id = "dynamic_orbit")
+    sim_settings_menu.add.toggle_switch("Show Zoom:", True, toggleswitch_id = "zoom")
     sim_settings_menu.add.toggle_switch("Show Images:", True, toggleswitch_id = "images")
     sim_settings_menu.add.toggle_switch("Show Sim Speed:", True, toggleswitch_id = "time")
+    sim_settings_menu.add.toggle_switch("Show Orbit Lines:", True, toggleswitch_id = "orbits_lines")
+    sim_settings_menu.add.toggle_switch("Dynamic Orbit Lines:", True, toggleswitch_id = "dynamic_orbit")
+
     sim_settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
     # Adding the widgets to the planet settings menu
     planet_settings_menu.add.range_slider("Relative Planet Scale:", 2, (1, 10), 1, rangeslider_id="planet_scale")
@@ -76,7 +78,7 @@ def main_sim():
     show_time = True
     show_zoom = True
     show_controls = False
-    dynamic_orbit_lines = False
+    dynamic_orbit_lines = True
     sim_paused = False
     last_paused = time.time()
     main_font = pygame.font.SysFont("Nevis", 20)
@@ -105,6 +107,8 @@ def main_sim():
     planet_hovered = False
     hovered_planet = None
 
+    update_planet_points = False
+
     # Creating main loop
     while running:
         stats_displayed = 0
@@ -114,6 +118,11 @@ def main_sim():
         Planet.Paused = sim_paused
         # Updating the planets
         for planet in planets:
+            if update_planet_points:
+                planet.update_planet_points()
+                if planet.name == "Pluto":
+                    update_planet_points = False
+
             if planet.win is None:
                 planet.set_window(window)
             if not sim_paused:
@@ -153,8 +162,13 @@ def main_sim():
                     match event.key:
                         case pygame.K_d:
                             Planet.TIMESTEP *= 1.0005
+                            update_planet_points = True
+
                         case pygame.K_a:
                             Planet.TIMESTEP *= 0.9995
+                            update_planet_points = True
+                            print(planets[1].planets_points)
+
                         case pygame.K_w:
                             Planet.SCALE *= 1.0005
                             Planet.orbit_zoom_scale *= 1.0005
