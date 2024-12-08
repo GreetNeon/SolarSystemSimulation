@@ -2,7 +2,7 @@
 # Description: Main file for the project
 # Dependencies: calculations.py, menu_GUI.py, transitions.py, simulation_helper.py
 # Author: Teon Green
-# Current Bugs: When focusing a planet, and then focusing on another planet, earths moon centres at that planet
+# Current Bugs: None
 ####################################################################################################
 
 # Importing the calculations module
@@ -42,7 +42,7 @@ def create_pause_menu():
     # Creating the planet settibns menu
     planet_settings_menu = pm.Menu(title="Planet Settings", width=resolution[0], height=resolution[1], theme=mytheme)
     # Adding the widgets to the settings menus
-    sim_settings_menu.add.toggle_switch("Show Fps", True, toggleswitch_id='fps')
+    sim_settings_menu.add.toggle_switch("Show Fps:", True, toggleswitch_id='fps')
     sim_settings_menu.add.toggle_switch("Show Zoom:", True, toggleswitch_id = "zoom")
     sim_settings_menu.add.toggle_switch("Show Images:", True, toggleswitch_id = "images")
     sim_settings_menu.add.toggle_switch("Show Sim Speed:", True, toggleswitch_id = "time")
@@ -51,7 +51,7 @@ def create_pause_menu():
 
     sim_settings_menu.add.color_input('Button Hover Colour: ', color_type=pm.widgets.COLORINPUT_TYPE_RGB, default=(255, 0, 0), color_id='hover_colour')
     # Adding the widgets to the planet settings menu
-    planet_settings_menu.add.range_slider("Relative Planet Scale:", 2, (1, 10), 1, rangeslider_id="planet_scale")
+    planet_settings_menu.add.range_slider("Relative Planet Scale:", 1, (1, 10), 1, rangeslider_id="planet_scale")
     planet_settings_menu.add.selector("Planet colours: ", [("Default", "default"), ("Greyscale", "greyscale"), ("Inverted", "inverted"), ("Fun", "fun")],selector_id="planet_colours")
     # Adding the widgets to the pause menu
     pause_menu.add.button("Resume", lambda: pause_menu.disable())
@@ -64,6 +64,10 @@ def create_pause_menu():
     return pause_menu, sim_settings_menu, planet_settings_menu
 
 def main_sim():
+    graphics_dict = {'low': {'show_orbit_lines': False, 'show_fps': True, 'show_images': False, 'show_time': True, 'show_zoom': True, 'dynamic_orbit_lines': False},
+                    'medium': {'show_orbit_lines': True, 'show_fps': True, 'show_images': False, 'show_time': True, 'show_zoom': True, 'dynamic_orbit_lines': False},
+                    'high': {'show_orbit_lines': True, 'show_fps': True, 'show_images': True, 'show_time': True, 'show_zoom': True, 'dynamic_orbit_lines': False},
+                    'ultra high': {'show_orbit_lines': True, 'show_fps': True, 'show_images': True, 'show_time': True, 'show_zoom': True, 'dynamic_orbit_lines': True}}
     planets = set_planets()
     FPS = 90
     clock = pygame.time.Clock()
@@ -72,13 +76,13 @@ def main_sim():
     check_settings = False
     screen_w = resolution[0]
     screen_h = resolution[1]
-    show_orbit_lines = True
-    show_fps = True
-    show_images = True
-    show_time = True
-    show_zoom = True
+    show_orbit_lines = graphics_dict[graphics]["show_orbit_lines"]
+    show_fps = graphics_dict[graphics]["show_fps"]
+    show_images = graphics_dict[graphics]["show_images"]
+    show_time = graphics_dict[graphics]["show_time"]
+    show_zoom = graphics_dict[graphics]["show_zoom"]
+    dynamic_orbit_lines = graphics_dict[graphics]["dynamic_orbit_lines"]
     show_controls = False
-    dynamic_orbit_lines = True
     sim_paused = False
     last_paused = time.time()
     main_font = pygame.font.SysFont("Nevis", 20)
@@ -111,6 +115,7 @@ def main_sim():
 
     # Creating main loop
     while running:
+        zoom = round((Planet.SCALE / Planet.DEFAULT_SCALE), 2)
         stats_displayed = 0
         mouse_pos = pygame.mouse.get_pos()
         window.fill((0, 0, 0))
@@ -126,7 +131,7 @@ def main_sim():
             if planet.win is None:
                 planet.set_window(window)
             if not sim_paused:
-                planet.update_position(planets)
+                planet.update_position(planets, dynamic_orbit_lines)
             planet.draw(show_orbit_lines, dynamic_orbit_lines, show_images)
             if planet.rect != None:
                 if planet.rect.collidepoint(mouse_pos):
@@ -140,14 +145,6 @@ def main_sim():
                     if planet.hovered:
                         planet_hovered = False
                     planet.hovered = False
-        for moon in moons:
-            if moon.win is None:
-                moon.set_window(window)
-            if not sim_paused:
-                moon.update_position(planets)
-            moon.draw(show_orbit_lines, dynamic_orbit_lines, show_images)            
-            
-            # Outline planet if it being hovered over
             if planet.hovered is True:
                 outline_radius = planet.adjusted_radius + screen_w * 0.01
                 corrected_x = planet.scaled_x + Planet.correction_x
@@ -155,6 +152,15 @@ def main_sim():
                 pygame.draw.circle(window, planet.colour, (corrected_x, corrected_y), outline_radius, 2)
                 pygame.draw.line(window, planet.colour, (corrected_x + outline_radius - 1, corrected_y), (corrected_x + outline_radius + screen_w * 0.03, corrected_y), 2)
                 display_text(window, planet.name, main_font, corrected_x + outline_radius + screen_w * 0.035, corrected_y - screen_h * 0.01, text_colour = planet.colour, scale = False)
+        for moon in moons:
+            if moon.win is None:
+                moon.set_window(window)
+            if not sim_paused:
+                moon.update_position()
+            moon.draw()            
+            
+            # Outline planet if it being hovered over
+
 
         # Checking for events
         for event in pygame.event.get():
@@ -220,9 +226,11 @@ def main_sim():
 
                     elif (planet_focus is not None and Planet.planet_focused and planet_focus.hovered):
                         Planet.planet_focused = False
+                        planet_focus.focused = False
                         Planet.displacement_x = 0
                         Planet.displacement_y = 0
                     elif (hovered_planet != planet_focus) and Planet.planet_focused and hovered_planet is not None:
+                        planet_focus.focused = False
                         planet_focus = hovered_planet
                     
         if check_settings:
@@ -253,7 +261,7 @@ def main_sim():
                             main_font, screen_w * 0.005, screen_h * (0.01 + 0.025 * (stats_displayed - 1)), scale = False)
         if show_zoom:
             stats_displayed += 1
-            display_text(window, f'Zoom: {round((Planet.SCALE / Planet.DEFAULT_SCALE), 2)}x', main_font, screen_w * 0.005, screen_h * (0.01 + 0.025 * (stats_displayed - 1)), scale = False)
+            display_text(window, f'Zoom: {zoom}x', main_font, screen_w * 0.005, screen_h * (0.01 + 0.025 * (stats_displayed - 1)), scale = False)
         if sim_paused:
             display_text(window, "Paused", larger_font, screen_w / 2, screen_h * 0.05, text_colour=(255, 0, 0))
         # Drawing buttons

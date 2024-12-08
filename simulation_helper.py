@@ -38,7 +38,7 @@ class Planet:
     DEFAULT_TIMESTEP = 3600*24 # 1 day
     TIMESTEP = 3600*24 # 1 day
     planet_scale = 900000000
-    planet_size = 2
+    planet_size = 1
     update_planet_sizes = True
     update_planet_colours = True
     colour_mode = "default"
@@ -122,8 +122,9 @@ class Planet:
         else:
             orbit = self.orbit
         # Scale the points in the orbit to fit on the screen
-        self.orbit_points = [(point[0] * self.SCALE + (self.win_width / 2) + self.displacement_x,
-                        point[1] * self.SCALE + (self.win_height / 2) + self.displacement_y) for point in orbit]
+        if dynamic_orbit:
+            self.orbit_points = [(point[0] * self.SCALE + (self.win_width / 2) + self.displacement_x,
+                            point[1] * self.SCALE + (self.win_height / 2) + self.displacement_y) for point in orbit]
         x, y = self.orbit_points[-1]
         # Set important class atributes
         self.scaled_x = x
@@ -174,7 +175,7 @@ class Planet:
         force_x, force_y, self.distance_to_sun = calculate_force(self, other, self.G)
         return force_x, force_y
 
-    def update_position(self, planets:list):
+    def update_position(self, planets:list, dynamic_orbit):
         '''Update the position of the planet'''
         total_fx = total_fy = 0
         for planet in planets:
@@ -191,6 +192,9 @@ class Planet:
         self.x += self.x_vel * self.TIMESTEP
         self.y += self.y_vel * self.TIMESTEP
         self.orbit.append((self.x, self.y))
+        if not dynamic_orbit:
+            scaled_x, scaled_y = self.x * self.SCALE + (self.win_width / 2) + self.displacement_x, self.y * self.SCALE + (self.win_height / 2) + self.displacement_y
+            self.orbit_points.append((scaled_x, scaled_y))
 
 class Moon(Planet):
     def __init__(self, dist_from_parent, radius, parent, colours, mass, name, orbit_period, win = None):
@@ -199,14 +203,13 @@ class Moon(Planet):
         self.orbit = []
         self.displacement_x = 0
         self.displacement_y = 0
-        self.distance_to_parent = dist_from_parent * self.DEFAULT_SCALE * 30
+        self.distance_to_parent = ((parent.radius * self.planet_scale) + (dist_from_parent * 10)) * self.DEFAULT_SCALE
         self.orbit_period = orbit_period * 24 * 3600
         self.theta = 0
         super().__init__(parent.x + self.distance_to_parent, parent.y, radius, colours, mass, name, 100)
-        print(self.distance_to_parent)
         
 
-    def update_position(self, planets):
+    def update_position(self):
         #idea: Let earth be the sun for the moon, and calculate the force of attraction between the moon and the earth, based on
         #the scaled positions of the moon and the earth
         # Easier idea: make the moon do a circle around its parent planet
@@ -217,18 +220,19 @@ class Moon(Planet):
         self.orbit_points.append((self.x, self.y))
         self.theta += self.TIMESTEP/self.orbit_period
 
-    def draw(self, show_orbit_lines, dynamic_orbit_lines, show_images):
+    def draw(self):
         temp_x, temp_y = self.parent.orbit_points[-1]
         diff_x = (self.win_width/2) - temp_x
         diff_y = (self.win_height/2) - temp_y
-        self.scaled_x = self.x + diff_x
-        self.scaled_y = self.y + diff_y
-        if self.parent.focused:
+        
+        if self.parent.focused and not self.Paused:
+            self.scaled_x = self.x + diff_x
+            self.scaled_y = self.y + diff_y
             print(f'scaled x: {self.scaled_x} scaled y: {self.scaled_y}')
             print(f'diff x: {diff_x} diff y: {diff_y}')
-            pygame.draw.circle(self.win, self.colour, (self.scaled_x, self.scaled_y), self.radius * self.SCALE * self.planet_scale)
+            pygame.draw.circle(self.win, self.colour, (self.scaled_x, self.scaled_y), self.radius * self.SCALE * self.planet_scale * self.planet_size)
         else:
-            pygame.draw.circle(self.win, self.colour, (self.x, self.y), self.radius * self.SCALE * self.planet_scale)
+            pygame.draw.circle(self.win, self.colour, (self.x, self.y), self.radius * self.SCALE * self.planet_scale * self.planet_size)
 
         
 def set_planets():
@@ -247,51 +251,57 @@ def set_planets():
         "Uranus": {"default": "#7BBEF5", "greyscale": "#808080", "inverted": "#84410A", "fun": "#00FFFF"},
         "Neptune": {"default": "#4b70dd", "greyscale": "#696969", "inverted": "#B48F22", "fun": "#1E90FF"},
         "Pluto": {"default": "#9ca6b7", "greyscale": "#BEBEBE", "inverted": "#635948", "fun": "#FF1493"},
-        'Earth Moon': {"default": "#808080", "greyscale": "#818181", "inverted": "#FFFFFF", "fun": "#F3A8C2"}
+        'Moon': {"default": "#808080", "greyscale": "#818181", "inverted": "#FFFFFF", "fun": "#F3A8C2"}
     }
     
     sun = Planet(0, 0, 15, all_colours["Sun"], 1.98892 * 10 ** 30, "Sun", p_points["Sun"])
     sun.sun = True
 
-    earth = Planet(-1 * Planet.AU, 0, 3.96, all_colours["Earth"], 5.9722 * 10 ** 24, "Earth", p_points["Earth"])
+    earth = Planet(-1 * Planet.AU, 0, 6.38, all_colours["Earth"], 5.9722 * 10 ** 24, "Earth", p_points["Earth"])
     earth.y_vel = 29.783 * 1000
 
-    mars = Planet(-1.524 * Planet.AU, 0, 2.46, all_colours["Mars"], 6.39 * 10 ** 23, "Mars", p_points["Mars"])
+    mars = Planet(-1.524 * Planet.AU, 0, 3.39, all_colours["Mars"], 6.39 * 10 ** 23, "Mars", p_points["Mars"])
     mars.y_vel = 24.077 * 1000
 
-    mercury = Planet(0.387 * Planet.AU, 0, 1.52, all_colours["Mercury"], 3.30 * 10 ** 23, "Mercury", p_points["Mercury"])
+    mercury = Planet(0.387 * Planet.AU, 0, 2.44, all_colours["Mercury"], 3.30 * 10 ** 23, "Mercury", p_points["Mercury"])
     mercury.y_vel = -47.4 * 1000
 
-    venus = Planet(0.723 * Planet.AU, 0, 3.76, all_colours["Venus"], 4.8685 * 10 ** 24, "Venus", p_points["Venus"])
+    venus = Planet(0.723 * Planet.AU, 0, 6.05, all_colours["Venus"], 4.8685 * 10 ** 24, "Venus", p_points["Venus"])
     venus.y_vel = -35.02 * 1000
 
-    # jupiter = Planet(5.2 * Planet.AU, 0, 20, Planet.JUPITER_COLOR, 1.898 * 10 ** 27, "Jupiter")
-    jupiter = Planet(5.2 * Planet.AU, 0, 43.44, all_colours["Jupiter"], 1.898 * 10 ** 27, "Jupiter", p_points["Jupiter"])
+    jupiter = Planet(5.2 * Planet.AU, 0, 69.91, all_colours["Jupiter"], 1.898 * 10 ** 27, "Jupiter", p_points["Jupiter"])
     jupiter.y_vel = -13.06 * 1000
 
-    # saturn = Planet(9.5 * Planet.AU, 0, 16, Planet.SATURN_COLOR, 5.683 * 10 ** 26, "Saturn")
-    saturn = Planet(9.5 * Planet.AU, 0, 36.18, all_colours["Saturn"], 5.683 * 10 ** 26, "Saturn", p_points["Saturn"])
+    saturn = Planet(9.5 * Planet.AU, 0, 58.23, all_colours["Saturn"], 5.683 * 10 ** 26, "Saturn", p_points["Saturn"])
     saturn.y_vel = -9.68 * 1000
 
-    # uranus = Planet(-19.8 * Planet.AU, 0, 12, Planet.URANUS_COLOR, 8.681 * 10 ** 25, "Uranus")
-    uranus = Planet(-19.8 * Planet.AU, 0, 15.76, all_colours["Uranus"], 8.681 * 10 ** 25, "Uranus", p_points["Uranus"])
+    uranus = Planet(-19.8 * Planet.AU, 0, 25.36, all_colours["Uranus"], 8.681 * 10 ** 25, "Uranus", p_points["Uranus"])
     uranus.y_vel = 6.80 * 1000
 
-    # neptune = Planet(30 * Planet.AU, 0, 12, Planet.NEPTUNE_COLOR, 102.409 * 10 ** 24, "Neptune")
-    neptune = Planet(30 * Planet.AU, 0, 15.3, all_colours["Neptune"], 102.409 * 10 ** 24, "Neptune", p_points["Neptune"])
+    neptune = Planet(30 * Planet.AU, 0, 24.6, all_colours["Neptune"], 102.409 * 10 ** 24, "Neptune", p_points["Neptune"])
     neptune.y_vel = -5.43 * 1000
 
-    # pluto = Planet(-39 * Planet.AU, 0, 2, Planet.PLUTO_COLOR, 0.01303 * 10 ** 24, "Pluto")
-    pluto = Planet(-39 * Planet.AU, 0, 1.48, all_colours["Pluto"], 0.01303 * 10 ** 24, "Pluto", p_points["Pluto"])
+    pluto = Planet(-39 * Planet.AU, 0, 1.18, all_colours["Pluto"], 0.01303 * 10 ** 24, "Pluto", p_points["Pluto"])
     pluto.y_vel = 4.67 * 1000
 
-    #test 
-    earth_moon = Moon(0.00257 * Planet.AU, 1, earth, all_colours["Earth Moon"], 7.342 * 10 ** 22, "Earth Moon", 27.3)
-    earth_moon.y_vel = 2.28 * 1000
+    earth_moon = Moon(0.00257 * Planet.AU, 1.74, earth, all_colours["Moon"], 7.342 * 10 ** 22, "Moon", 27.3)
+    
+    jupiter_ganymede = Moon(0.00715 * Planet.AU, 2.63, jupiter, all_colours["Moon"], 1.4819 * 10 ** 23, "Ganymede", 7.2)
 
+    saturn_titan = Moon(0.00817 * Planet.AU, 2.58, saturn, all_colours["Moon"], 1.3452 * 10 ** 23, "Titan", 15.95)
+
+    jupiter_callisto = Moon(0.01257 * Planet.AU, 2.41, jupiter, all_colours["Moon"], 1.075938 * 10 ** 23, "Callisto", 16.7)
+
+    jupiter_io = Moon(0.00282 * Planet.AU, 1.82, jupiter, all_colours["Moon"], 8.931938 * 10 ** 22, "Io", 1.8)
+
+    jupiter_europa = Moon(0.00448 * Planet.AU, 1.56, jupiter, all_colours["Moon"], 4.799844 * 10 ** 22, "Europa", 3.5)
+
+    neptune_triton = Moon(0.00237 * Planet.AU, 1.35, neptune, all_colours["Moon"], 2.14 * 10 ** 22, "Triton", 5.9)
+
+    uranus_titania = Moon(0.00289 * Planet.AU, 0.79, uranus, all_colours["Moon"], 3.527 * 10 ** 21, "Titania", 8.7)
 
     planets = [sun, mercury, venus, earth, mars, jupiter, saturn, uranus, neptune, pluto]
-    moons = [earth_moon]
+    moons = [earth_moon, jupiter_ganymede, saturn_titan, jupiter_callisto, jupiter_io, jupiter_europa, neptune_triton, uranus_titania]
     return planets, moons
 
 def display_text(win, text, font, x, y, text_colour = (255, 255, 255), rtrn = False, scale = True):
