@@ -44,6 +44,9 @@ class Planet:
     orbit_zoom_scale = 1
     displacement_x = 0
     displacement_y = 0
+    correction_x = 0
+    correction_y = 0
+    planet_focused  = False
     def __init__(self, x, y, radius, colours, mass: float, name, planets_points):
             self.x = x
             self.y = y
@@ -96,15 +99,6 @@ class Planet:
         '''Update the colour of the planet'''
         self.colour = self.colours[self.colour_mode]
 
-    '''This to scale the orbit of a planet when zooming, however, it is not used in the final version of the code'''
-    # def scale_orbit(self, value, dynamic_orbit, paused):
-    #     '''When zooming in or out, scale the orbit of the planet'''
-    #     self.scaled_x = (value * self.scaled_x) - ((self.win_width / 2) * (value - 1))
-    #     self.scaled_y = (value * self.scaled_y) - ((self.win_height / 2) * (value - 1))
-    #     if dynamic_orbit:
-    #         self.orbit_points = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.orbit_points]
-    #     else:
-    #         self.loaded_orbit = [(value * point[0] - ((self.win_width / 2) * (value - 1)) , value * point[1] - ((self.win_height / 2) * (value - 1))) for point in self.loaded_orbit]
     def draw(self, orbit_lines, dynamic_orbit, show_images):
         '''Draw the planet on the window'''
         if self.update_planet_sizes:
@@ -148,7 +142,7 @@ class Planet:
             if not self.orbit_refresh:
                 self.orbit_refresh = True
             # If the distance to centre is 0 or it hasn't been updated in 5 seconds, update it
-            if self.distance_to_centre == 0 or (self.last_orbit_change + 5 < time.time() and not self.Paused):
+            if self.distance_to_centre == 0 or (self.last_orbit_change + 5 < time.time() and not self.Paused and not self.planet_focused):
                 self.last_orbit_change = time.time()
                 scaled_x = self.x * self.DEFAULT_SCALE + (self.win_width / 2) + self.displacement_x
                 scaled_y = self.y * self.DEFAULT_SCALE + (self.win_height / 2) + self.displacement_y
@@ -160,13 +154,13 @@ class Planet:
 
         # Draw the planet
         self.adjusted_radius = self.size * self.SCALE * self.planet_scale
-        #Dont draw unless its in the window
+        # Dont draw unless its in the window
         if self.rect.colliderect(self.win.get_rect()):
             if show_images:
                 self.image = pygame.transform.scale(pygame.image.load(f'gfx/{self.name}.png').convert_alpha(), (int(self.adjusted_radius * 2), int(self.adjusted_radius * 2)))
-                self.win.blit(self.image, (x - self.adjusted_radius, y - self.adjusted_radius))
+                self.win.blit(self.image, (x - self.adjusted_radius + self.correction_x, y - self.adjusted_radius + self.correction_y))
             else:
-                pygame.draw.circle(self.win, self.colour, (x, y), self.adjusted_radius)
+                pygame.draw.circle(self.win, self.colour, (x + self.correction_x, y + self.correction_y), self.adjusted_radius)
 
     def attraction(self, other:object):
         '''Calculate the force of attraction between 2 planets'''

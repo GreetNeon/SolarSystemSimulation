@@ -2,7 +2,7 @@
 # Description: Main file for the project
 # Dependencies: calculations.py, menu_GUI.py, transitions.py
 # Author: Teon Green
-# Current Bugs: 
+# Current Bugs: When unfocusing and trying to refocus on a planet, the previously focused planet is still focused 
 ####################################################################################################
 
 # Importing the calculations module
@@ -74,6 +74,7 @@ def main_sim():
     show_fps = True
     show_images = True
     show_time = True
+    show_zoom = True
     show_controls = False
     dynamic_orbit_lines = False
     sim_paused = False
@@ -98,8 +99,15 @@ def main_sim():
     # Creating in-game buttons
     show_controls_button = Button(screen_w * 0.92, screen_h * 0.01, "Show Controls", main_font)
 
+    # Creating planet focus
+    planet_focus = None
+    Planet.planet_focused = False
+    planet_hovered = False
+    hovered_planet = None
+
     # Creating main loop
     while running:
+        stats_displayed = 0
         mouse_pos = pygame.mouse.get_pos()
         window.fill((0, 0, 0))
         clock.tick(FPS)
@@ -114,15 +122,24 @@ def main_sim():
             if planet.rect != None:
                 if planet.rect.collidepoint(mouse_pos):
                     planet.hovered = True
+                    planet_hovered = True
+                    if not Planet.planet_focused:
+                        planet_focus = planet
+                    else:
+                        hovered_planet = planet
                 else:
+                    if planet.hovered:
+                        planet_hovered = False
                     planet.hovered = False
             
             # Outline planet if it being hovered over
             if planet.hovered is True:
                 outline_radius = planet.adjusted_radius + screen_w * 0.01
-                pygame.draw.circle(window, planet.colour, (planet.scaled_x, planet.scaled_y), outline_radius, 2)
-                pygame.draw.line(window, planet.colour, (planet.scaled_x + outline_radius - 1, planet.scaled_y), (planet.scaled_x + outline_radius + screen_w * 0.03, planet.scaled_y), 2)
-                display_text(window, planet.name, main_font, planet.scaled_x + outline_radius + screen_w * 0.035, planet.scaled_y - screen_h * 0.01, text_colour = planet.colour, scale = False)
+                corrected_x = planet.scaled_x + Planet.correction_x
+                corrected_y = planet.scaled_y + Planet.correction_y
+                pygame.draw.circle(window, planet.colour, (corrected_x, corrected_y), outline_radius, 2)
+                pygame.draw.line(window, planet.colour, (corrected_x + outline_radius - 1, corrected_y), (corrected_x + outline_radius + screen_w * 0.03, corrected_y), 2)
+                display_text(window, planet.name, main_font, corrected_x + outline_radius + screen_w * 0.035, corrected_y - screen_h * 0.01, text_colour = planet.colour, scale = False)
 
         # Checking for events
         for event in pygame.event.get():
@@ -179,7 +196,17 @@ def main_sim():
                             show_controls_button.text = "Hide Controls"
                         else:
                             show_controls_button.text = "Show Controls"
+                    if planet_hovered and not Planet.planet_focused:
+                        Planet.planet_focused = True
+                        print(Planet.planet_focused)
 
+                    elif (planet_focus is not None and Planet.planet_focused and planet_focus.hovered):
+                        Planet.planet_focused = False
+                        Planet.displacement_x = 0
+                        Planet.displacement_y = 0
+                    if (hovered_planet != planet_focus) and Planet.planet_focused and hovered_planet is not None:
+                        planet_focus = hovered_planet
+                    
 
         if check_settings:
             check_settings = False
@@ -200,11 +227,16 @@ def main_sim():
         '''Drawing Ui'''
 
         if show_fps:
+            stats_displayed += 1
             fps = clock.get_fps()
-            display_text(window, f"FPS: {round(fps, 2)}", main_font, screen_w * 0.005, screen_h * 0.01, scale = False)
+            display_text(window, f"FPS: {round(fps, 2)}", main_font, screen_w * 0.005, screen_h * (0.01 + 0.025 * (stats_displayed - 1)), scale = False)
         if show_time and fps != 0:
-                display_text(window, f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} (Days Per Second)",
-                                main_font, screen_w * 0.005, screen_h * 0.035, scale = False)
+            stats_displayed += 1
+            display_text(window, f"Speed: {round(((Planet.TIMESTEP/(3600*24)) * fps), 2)} (Days Per Second)",
+                            main_font, screen_w * 0.005, screen_h * (0.01 + 0.025 * (stats_displayed - 1)), scale = False)
+        if show_zoom:
+            stats_displayed += 1
+            display_text(window, f'Zoom: {round((Planet.SCALE / Planet.DEFAULT_SCALE), 2)}x', main_font, screen_w * 0.005, screen_h * (0.01 + 0.025 * (stats_displayed - 1)), scale = False)
         if sim_paused:
             display_text(window, "Paused", larger_font, screen_w / 2, screen_h * 0.05, text_colour=(255, 0, 0))
         # Drawing buttons
@@ -218,6 +250,25 @@ def main_sim():
             show_controls_button.text_colour = hover_colour
         else:
             show_controls_button.text_colour = (255, 255, 255)
+
+        if Planet.planet_focused and (planet_focus is not None):
+            temp_x, temp_y = planet_focus.orbit[-1]
+            sun_x, sun_y = planets[0].orbit[-1]
+            s_sun_x = sun_x * Planet.SCALE
+            s_sun_y = sun_y * Planet.SCALE
+            temp_x = temp_x * Planet.SCALE
+            temp_y = temp_y * Planet.SCALE
+            focus_x, focus_y = planet_focus.orbit_points[-1]
+            diff_x = (screen_w/2) - focus_x
+            diff_y = (screen_h/2) - focus_y
+            Planet.correction_x = diff_x
+            Planet.correction_y = diff_y
+            Planet.displacement_x = (-temp_x)
+            Planet.displacement_y = (-temp_y)
+            print(f'focused planet x: {planet_focus.orbit_points[-1][0]}, y: {planet_focus.orbit_points[-1][1]} diff x: {diff_x} diff y: {diff_y}')
+        else:
+            Planet.correction_x = 0
+            Planet.correction_y = 0
 
         pygame.display.update()
 
