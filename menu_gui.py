@@ -61,8 +61,8 @@ class MainMenu:
                         ("Ultra High", "ultra high")]
             self.settings_menu.add.dropselect(title="Graphics Level", items=graphics, 
                                 dropselect_id="graphics", default=0)
-            resolutions = [("1200x650", (1200, 650)), ("800x600", (800, 600)),
-                            ("400x300", (400, 300))]
+            resolutions = [("1500x875", (1500, 875)), ("1200x700", (1200, 700)), ("900x525", (900, 525)),
+                            ("600x350", (600, 350))]
             self.settings_menu.add.dropselect(title="Resolution", items=resolutions, 
                                 dropselect_id="resolution", default=0)
         except(pygame.error):
